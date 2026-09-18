@@ -1,0 +1,6 @@
+[
+  {"centerId":"CENTER-001","partCode":"PART-BRAKE-01","available":5000},
+  {"centerId":"CENTER-001","partCode":"PART-FILTER-01","available":3000},
+  {"centerId":"CENTER-002","partCode":"PART-BRAKE-01","available":2500},
+  {"centerId":"CENTER-LOAD","partCode":"PART-LOAD-01","available":100000}
+]

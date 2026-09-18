@@ -1,0 +1,13 @@
+:root { font-family: Arial, sans-serif; background: #f4f6f8; color: #17212b; }
+body { margin: 0; }
+.container { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+.subtitle { margin-top: -8px; color: #5c6773; }
+.card { background: #fff; border: 1px solid #dbe1e7; border-radius: 8px; padding: 20px; margin: 20px 0; }
+form { display: grid; gap: 12px; }
+label { display: grid; gap: 5px; font-weight: 600; }
+input, select, textarea { padding: 9px; border: 1px solid #aeb8c2; border-radius: 4px; font: inherit; }
+button { width: fit-content; padding: 9px 16px; border: 0; border-radius: 4px; cursor: pointer; }
+.secondary { background: #e8edf2; }
+.error { color: #a31b1b; font-weight: 600; }
+.result { margin-top: 16px; padding: 12px; background: #eef5f0; border-radius: 4px; }
+ul { padding-left: 20px; }
