@@ -103,6 +103,6 @@ Lo que quedo fuera, en orden de prioridad si hubiera mas tiempo:
 | Integracion backend | Implementado |
 | Unitarias frontend | Implementado |
 | Integracion frontend | Implementado |
-| Automatizacion de interfaz | Pendiente |
+| Automatizacion de interfaz | Implementado |
 | Humo | Pendiente |
 | Carga | Pendiente |

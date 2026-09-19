@@ -93,8 +93,62 @@ cd frontend && npx vitest run test/App.test.js
 
 ### Familia B - Requieren un entorno desplegado
 
-Apuntan a una URL y reciben configuracion externa. Aun no implementadas:
-automatizacion de interfaz, humo y carga.
+Apuntan a una URL real y reciben la configuracion por variables de entorno.
+
+**Automatizacion de interfaz** (Playwright, carpeta `e2e/`):
+
+| Suite | Archivo | Que valida |
+|---|---|---|
+| Interfaz | `e2e/tests/ui/dispatch-flow.spec.js` | Iniciar sesion, registrar una solicitud, ver el resultado y encontrarla en el listado |
+
+Requiere la aplicacion levantada. Primera vez:
+
+```bash
+cd e2e
+npm install
+npx playwright install chromium   # descarga el navegador
+```
+
+Ejecucion:
+
+```bash
+cd e2e
+npm test
+```
+
+Variables que usa, leidas del `.env` de la raiz:
+
+| Variable | Para que | Si no se define |
+|---|---|---|
+| `BASE_URL` | URL de la aplicacion web | `http://localhost:8080` |
+| `TEST_USERNAME` | Usuario del formulario de acceso | La prueba falla con un mensaje explicito |
+| `TEST_PASSWORD` | Credencial del formulario de acceso | La prueba falla con un mensaje explicito |
+
+Para ejecutarla contra el servidor de desarrollo de Vite en vez de Docker:
+
+```bash
+cd e2e
+BASE_URL=http://localhost:5173 npm test
+```
+
+Ver el reporte detallado de la ultima ejecucion:
+
+```bash
+cd e2e
+npx playwright show-report
+```
+
+Pendientes: humo y carga.
+
+### Evidencia de las ejecuciones y datos sensibles
+
+Playwright registra en sus trazas **el texto escrito en los formularios, incluida
+la credencial**. Por eso la configuracion solo guarda evidencia cuando una prueba
+falla (`trace: 'retain-on-failure'`), no graba video, y las carpetas
+`test-results/` y `playwright-report/` estan ignoradas por Git.
+
+Si se comparte evidencia de una ejecucion, deben revisarse antes las capturas y
+no adjuntarse las trazas sin depurar.
 
 ### Ambientes disponibles
 
