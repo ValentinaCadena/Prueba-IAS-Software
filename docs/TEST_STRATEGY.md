@@ -22,7 +22,7 @@ relevantes, y concentrar el esfuerzo donde si hay exposicion real.
 | R3 | Operaciones de negocio accesibles sin credencial | Correcto salvo una ruta (O-01) | Integracion + humo |
 | R4 | Respuestas de error que exponen detalles internos | Correcto; se fija el contrato | Integracion |
 | R5 | Degradacion de la consulta de disponibilidad bajo carga | Sin medir | Carga |
-| R6 | ~~XSS almacenado via `notes`~~ | **Descartado** - ver abajo | Confirmacion en unitaria frontend |
+| R6 | ~~XSS almacenado via `notes`~~ | **Descartado** - ver abajo | Confirmado en prueba de componente |
 | R7 | ~~Sobreventa por solicitudes concurrentes~~ | **Descartado** - ver abajo | No automatizado (ver alcance no cubierto) |
 
 ### Por que se descarto R6
@@ -101,8 +101,8 @@ Lo que quedo fuera, en orden de prioridad si hubiera mas tiempo:
 |---|---|
 | Unitarias backend | Implementado |
 | Integracion backend | Implementado |
-| Unitarias frontend | Pendiente |
-| Integracion frontend | Pendiente |
+| Unitarias frontend | Implementado |
+| Integracion frontend | Implementado |
 | Automatizacion de interfaz | Pendiente |
 | Humo | Pendiente |
 | Carga | Pendiente |

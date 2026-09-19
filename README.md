@@ -57,13 +57,13 @@ La distincion importa: determina que hay que levantar antes de ejecutarlas.
 Instancian el codigo directamente en el proceso de pruebas, sin puertos ni contenedores.
 Son rapidas y determinsticas, y se pueden ejecutar en cualquier momento.
 
+**Backend** (`node --test`, sin configuracion adicional):
+
 | Suite | Archivo | Que valida |
 |---|---|---|
 | Unitarias - validacion | `backend/test/validation.test.js` | Rango de cantidad, prioridad y campos obligatorios |
 | Unitarias - dominio | `backend/test/dispatchService.test.js` | Autorizacion, rechazo, descuento de disponibilidad e idempotencia |
 | Integracion - API | `backend/test/api.integration.test.js` | Ruta HTTP + autenticacion + validacion + dominio trabajando juntos |
-
-Ejecucion:
 
 ```bash
 cd backend
@@ -71,11 +71,24 @@ npm install     # solo la primera vez
 npm test
 ```
 
+**Frontend** (`vitest` con `jsdom`, ya incluidos en el proyecto):
+
+| Suite | Archivo | Que valida |
+|---|---|---|
+| Unitarias - validacion | `frontend/test/validators.test.js` | Rango de cantidad aceptado por el formulario |
+| Componente e integracion | `frontend/test/App.test.js` | Vista sin sesion, y el flujo de registro contra una API simulada |
+
+```bash
+cd frontend
+npm install     # solo la primera vez
+npm test
+```
+
 Para ejecutar un solo archivo:
 
 ```bash
-cd backend
-node --test test/api.integration.test.js
+cd backend  && node --test test/api.integration.test.js
+cd frontend && npx vitest run test/App.test.js
 ```
 
 ### Familia B - Requieren un entorno desplegado
