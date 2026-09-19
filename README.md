@@ -47,11 +47,65 @@ docker compose up --build -d
 
 Tambien es posible ejecutar backend y frontend con Node.js instalado. Consulta `docs/LOCAL_ENVIRONMENT.md`.
 
-## Pruebas existentes
+## Pruebas
 
-El repositorio contiene pruebas unitarias minimas de referencia. El alcance de la evaluacion requiere que el candidato amplie la estrategia de pruebas, incluyendo unitarias, integracion, automatizacion de interfaz en navegador, humo y carga segun el documento de la prueba.
+Las pruebas se agrupan en dos familias segun si necesitan o no la aplicacion desplegada.
+La distincion importa: determina que hay que levantar antes de ejecutarlas.
 
-No se incluyen ejemplos resueltos de pruebas de integracion, automatizacion de interfaz, humo o carga. Tampoco se instala una herramienta de automatizacion de navegador: su seleccion forma parte de las decisiones del candidato.
+### Familia A - No requieren entorno levantado
+
+Instancian el codigo directamente en el proceso de pruebas, sin puertos ni contenedores.
+Son rapidas y determinsticas, y se pueden ejecutar en cualquier momento.
+
+| Suite | Archivo | Que valida |
+|---|---|---|
+| Unitarias - validacion | `backend/test/validation.test.js` | Rango de cantidad, prioridad y campos obligatorios |
+| Unitarias - dominio | `backend/test/dispatchService.test.js` | Autorizacion, rechazo, descuento de disponibilidad e idempotencia |
+| Integracion - API | `backend/test/api.integration.test.js` | Ruta HTTP + autenticacion + validacion + dominio trabajando juntos |
+
+Ejecucion:
+
+```bash
+cd backend
+npm install     # solo la primera vez
+npm test
+```
+
+Para ejecutar un solo archivo:
+
+```bash
+cd backend
+node --test test/api.integration.test.js
+```
+
+### Familia B - Requieren un entorno desplegado
+
+Apuntan a una URL y reciben configuracion externa. Aun no implementadas:
+automatizacion de interfaz, humo y carga.
+
+### Ambientes disponibles
+
+Las suites de la familia B no dependen de como se levante la aplicacion, solo de
+las URLs que reciban. Cambiar de ambiente significa cambiar variables, no codigo.
+
+| Ambiente | API | Aplicacion web | Como se levanta |
+|---|---|---|---|
+| Docker Compose | `http://localhost:3000` | `http://localhost:8080` | `docker compose up --build -d` |
+| Node local | `http://localhost:3000` | `http://localhost:5173` | `npm start` y `npm run dev` |
+
+Los puertos de Docker se pueden cambiar con `BACKEND_PORT` y `FRONTEND_PORT` en `.env`.
+
+### Sobre las pruebas omitidas
+
+La suite reporta pruebas omitidas (`﹣`) con el motivo al lado. Corresponden a
+defectos detectados y documentados en `docs/FINDINGS.md`: expresan el
+comportamiento esperado segun las reglas de negocio, no el actual. Se mantienen
+omitidas para que la suite siga siendo ejecutable en verde sin ocultar el hallazgo.
+Al corregir el defecto en la aplicacion, basta con quitar la opcion `skip`.
+
+```
+﹣ no reprocesa una referencia ya despachada # Defecto F-01: no hay guarda de idempotencia (ver docs/FINDINGS.md)
+```
 
 ## Flujo web disponible
 
