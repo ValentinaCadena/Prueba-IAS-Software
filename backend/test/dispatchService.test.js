@@ -1,4 +1,5 @@
 // Pruebas de la logica de despacho: autorizar, rechazar y descontar inventario.
+// Cada prueba crea su propio servicio, que recarga los datos semilla. Asi no se pisan.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +16,7 @@ function solicitud(cambios = {}) {
   };
 }
 
-// Cada servicio nuevo recarga los datos semilla, asi las pruebas no se pisan.
+// Atajo para leer cuantas unidades quedan.
 function disponibles(service) {
   return service.availability('CENTER-001', 'PART-BRAKE-01').available;
 }

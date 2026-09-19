@@ -204,23 +204,15 @@ Al correr las pruebas del backend verás esto:
 ﹣ no reprocesa una referencia ya despachada # Defecto F-01 (ver docs/FINDINGS.md)
 ```
 
-Es un defecto encontrado en la aplicación. La prueba está escrita según lo que
-**debería** pasar, no según lo que pasa hoy, y queda omitida para que la suite
-siga en verde sin esconder el hallazgo.
+Es un defecto de la aplicación, no un error de la prueba. El detalle está en
+`docs/FINDINGS.md` y el motivo de dejarla omitida en `docs/DECISIONS.md`.
 
-Cuando se corrija el defecto, se quita el `skip` y la prueba pasa.
+## No compartir las trazas de Playwright
 
-Los detalles están en `docs/FINDINGS.md`.
+Guardan el texto escrito en los formularios, incluida la contraseña. Por eso
+solo se generan cuando algo falla y están fuera del repositorio.
 
-## Las trazas de Playwright guardan la contraseña
-
-Se verificó: las trazas registran el texto que se escribe en los formularios,
-incluido el campo de contraseña.
-
-Por eso la configuración solo guarda evidencia cuando algo falla, no graba
-video, y `test-results/` y `playwright-report/` están en el `.gitignore`.
-
-Si se comparte evidencia, revisar antes las capturas y no adjuntar las trazas.
+Si vas a compartir evidencia, usa capturas revisadas, nunca las trazas.
 
 ## Los datos están en memoria
 

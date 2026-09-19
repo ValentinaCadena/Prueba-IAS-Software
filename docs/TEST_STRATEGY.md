@@ -84,15 +84,3 @@ sobre los que exploran combinaciones de valores.
 | Sobreventa con peticiones simultáneas | El código descarta el riesgo | Varias peticiones a la vez verificando el descuento total |
 | JSON malformado y cuerpo muy grande | Riesgo bajo, la respuesta ya es controlada | Enviar un cuerpo cortado y otro de más de 32kb |
 | Punto de quiebre bajo carga | El límite del ejercicio son 2 minutos | Subir la tasa hasta que se degrade (ver `LOAD_TEST.md`) |
-
-## Estado
-
-| Bloque | Estado |
-|---|---|
-| Unitarias backend | Listo |
-| Integración backend | Listo |
-| Unitarias frontend | Listo |
-| Integración frontend | Listo |
-| Interfaz | Listo |
-| Humo | Listo |
-| Carga | Listo |
