@@ -148,7 +148,34 @@ cd e2e
 npx playwright show-report
 ```
 
-Pendiente: carga.
+**Prueba de carga** (k6, carpeta `load/`):
+
+Evalua si `GET /api/availability` sostiene las 30 solicitudes por segundo
+esperadas y los picos de 60. Dura 80 segundos.
+
+Requiere k6 instalado:
+
+```bash
+brew install k6
+```
+
+Ejecucion, con el entorno levantado:
+
+```bash
+k6 run load/availability.js
+```
+
+| Variable | Para que | Si no se define |
+|---|---|---|
+| `API_URL` | URL de la API | `http://localhost:3000` |
+| `LOAD_CENTER` | Centro a consultar | `CENTER-LOAD` |
+| `LOAD_PART` | Repuesto a consultar | `PART-LOAD-01` |
+
+El diseno del experimento, los resultados obtenidos y su interpretacion estan en
+`docs/LOAD_TEST.md`.
+
+> La carga se dirige a una ruta de solo lectura, asi que no altera el inventario
+> ni deja el entorno sucio para las demas suites.
 
 ### Evidencia de las ejecuciones y datos sensibles
 

@@ -21,7 +21,7 @@ relevantes, y concentrar el esfuerzo donde si hay exposicion real.
 | R2 | Entradas invalidas aceptadas o mal reportadas | Validacion correcta; se fijan los bordes | Unitaria backend + frontend |
 | R3 | Operaciones de negocio accesibles sin credencial | Correcto salvo una ruta (O-01) | Integracion + humo |
 | R4 | Respuestas de error que exponen detalles internos | Correcto; se fija el contrato | Integracion |
-| R5 | Degradacion de la consulta de disponibilidad bajo carga | Sin medir | Carga |
+| R5 | Degradacion de la consulta de disponibilidad bajo carga | Medido: cumple con holgura (ver `LOAD_TEST.md`) | Carga |
 | R6 | ~~XSS almacenado via `notes`~~ | **Descartado** - ver abajo | Confirmado en prueba de componente |
 | R7 | ~~Sobreventa por solicitudes concurrentes~~ | **Descartado** - ver abajo | No automatizado (ver alcance no cubierto) |
 
@@ -105,4 +105,4 @@ Lo que quedo fuera, en orden de prioridad si hubiera mas tiempo:
 | Integracion frontend | Implementado |
 | Automatizacion de interfaz | Implementado |
 | Humo | Implementado |
-| Carga | Pendiente |
+| Carga | Implementado |
