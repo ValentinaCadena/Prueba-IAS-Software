@@ -10,15 +10,9 @@
 // solas hasta que la condicion se cumple o se agota el tiempo.
 
 import { test, expect } from '@playwright/test';
+import { USUARIO, CLAVE, verificarCredenciales } from '../../config.js';
 
-const USUARIO = process.env.TEST_USERNAME;
-const CLAVE = process.env.TEST_PASSWORD;
-
-test.beforeAll(() => {
-  if (!USUARIO || !CLAVE) {
-    throw new Error('Faltan TEST_USERNAME y TEST_PASSWORD. Ejecuta ./scripts/init-local-env.sh en la raiz.');
-  }
-});
+test.beforeAll(verificarCredenciales);
 
 test('registrar una solicitud y verla en el listado de recientes', async ({ page }) => {
   const referencia = `REQ-UI-${Date.now()}`;

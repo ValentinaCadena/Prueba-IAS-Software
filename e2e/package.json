@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "humo": "playwright test --project=humo",
+    "interfaz": "playwright test --project=interfaz"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

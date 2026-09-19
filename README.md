@@ -95,13 +95,20 @@ cd frontend && npx vitest run test/App.test.js
 
 Apuntan a una URL real y reciben la configuracion por variables de entorno.
 
-**Automatizacion de interfaz** (Playwright, carpeta `e2e/`):
+Ambas viven en la carpeta `e2e/` y usan Playwright. Son suites separadas porque
+responden preguntas distintas:
 
-| Suite | Archivo | Que valida |
-|---|---|---|
-| Interfaz | `e2e/tests/ui/dispatch-flow.spec.js` | Iniciar sesion, registrar una solicitud, ver el resultado y encontrarla en el listado |
+| Suite | Archivo | Responde a | Duracion |
+|---|---|---|---|
+| Humo | `e2e/tests/smoke/smoke.spec.js` | "El entorno esta disponible para empezar a validar?" | < 1s |
+| Interfaz | `e2e/tests/ui/dispatch-flow.spec.js` | "El flujo del usuario funciona de punta a punta?" | < 1s |
 
-Requiere la aplicacion levantada. Primera vez:
+La de humo comprueba tres cosas: que la API responda, que la web cargue, y que
+la operacion critica (registrar y consultar una solicitud) funcione. Lo hace por
+API, sin recorrer la interfaz, para terminar en segundos. Si falla, no tiene
+sentido ejecutar el resto de las suites.
+
+Requieren la aplicacion levantada. Primera vez:
 
 ```bash
 cd e2e
@@ -113,18 +120,21 @@ Ejecucion:
 
 ```bash
 cd e2e
-npm test
+npm run humo        # solo la suite de humo
+npm run interfaz    # solo la automatizacion de interfaz
+npm test            # ambas
 ```
 
-Variables que usa, leidas del `.env` de la raiz:
+Variables que usan, leidas del `.env` de la raiz:
 
 | Variable | Para que | Si no se define |
 |---|---|---|
 | `BASE_URL` | URL de la aplicacion web | `http://localhost:8080` |
-| `TEST_USERNAME` | Usuario del formulario de acceso | La prueba falla con un mensaje explicito |
-| `TEST_PASSWORD` | Credencial del formulario de acceso | La prueba falla con un mensaje explicito |
+| `API_URL` | URL de la API | `http://localhost:3000` |
+| `TEST_USERNAME` | Usuario del formulario de acceso | Las pruebas fallan con un mensaje explicito |
+| `TEST_PASSWORD` | Credencial del formulario de acceso | Las pruebas fallan con un mensaje explicito |
 
-Para ejecutarla contra el servidor de desarrollo de Vite en vez de Docker:
+Para ejecutarlas contra el servidor de desarrollo de Vite en vez de Docker:
 
 ```bash
 cd e2e
@@ -138,7 +148,7 @@ cd e2e
 npx playwright show-report
 ```
 
-Pendientes: humo y carga.
+Pendiente: carga.
 
 ### Evidencia de las ejecuciones y datos sensibles
 

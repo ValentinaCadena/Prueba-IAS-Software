@@ -104,5 +104,5 @@ Lo que quedo fuera, en orden de prioridad si hubiera mas tiempo:
 | Unitarias frontend | Implementado |
 | Integracion frontend | Implementado |
 | Automatizacion de interfaz | Implementado |
-| Humo | Pendiente |
+| Humo | Implementado |
 | Carga | Pendiente |

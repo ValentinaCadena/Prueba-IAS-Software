@@ -10,7 +10,13 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '../.env' });
 
 export default defineConfig({
-  testDir: './tests',
+  // Dos suites separadas: tienen propositos distintos y se ejecutan aparte.
+  // `npm run humo` responde "el entorno esta disponible?".
+  // `npm run interfaz` recorre el flujo de un usuario.
+  projects: [
+    { name: 'humo', testDir: './tests/smoke' },
+    { name: 'interfaz', testDir: './tests/ui' }
+  ],
 
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:8080',
