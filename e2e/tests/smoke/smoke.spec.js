@@ -1,13 +1,6 @@
-// Suite de humo: responde una sola pregunta, "el entorno esta disponible
-// para empezar a validar?".
-//
-// Se diferencia de la suite de interfaz en el proposito: aqui no se recorre el
-// flujo de un usuario ni se verifican reglas de negocio. Solo se comprueba que
-// el servicio responde, que la web carga y que la operacion critica funciona
-// de punta a punta. Si algo de esto falla, no tiene sentido ejecutar el resto.
-//
-// La operacion critica se ejecuta por API, no por navegador, para que la suite
-// termine en segundos.
+// Suite de humo: responde si el entorno esta disponible para empezar a validar.
+// Si algo de esto falla, no tiene sentido correr las demas suites.
+// Usa la API en vez del navegador para terminar en segundos.
 
 import { test, expect } from '@playwright/test';
 import { API_URL, USUARIO, CLAVE, verificarCredenciales } from '../../config.js';

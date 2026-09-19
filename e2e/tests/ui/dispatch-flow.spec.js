@@ -1,13 +1,6 @@
-// Automatizacion de interfaz: el flujo critico visto por un usuario.
-//
-// POR QUE ESTE FLUJO: registrar una solicitud es la operacion que mueve
-// inventario. Es donde un fallo tiene costo real para el negocio.
-//
-// DATOS: la referencia se genera en cada ejecucion, asi la prueba se repite
-// sin depender de lo que dejo la corrida anterior ni necesitar limpieza.
-//
-// SINCRONIZACION: sin esperas fijas. Las aserciones de Playwright reintentan
-// solas hasta que la condicion se cumple o se agota el tiempo.
+// Flujo critico en el navegador: entrar, registrar una solicitud y verla listada.
+// Se eligio este flujo porque es el que mueve inventario.
+// La referencia se genera en cada corrida para poder repetir sin limpiar nada.
 
 import { test, expect } from '@playwright/test';
 import { USUARIO, CLAVE, verificarCredenciales } from '../../config.js';

@@ -1,14 +1,6 @@
 // Pruebas del componente principal.
-//
-// El primer bloque monta la vista sin sesion: no usa la red, es una prueba
-// unitaria de componente.
-//
-// El segundo bloque es de integracion: monta el componente real y lo hace
-// conversar con una API simulada. Integra vista + estado + cliente HTTP contra
-// un contrato controlado. No es humo porque no hay navegador ni backend real.
-//
-// Los campos se buscan por su etiqueta visible, igual que haria una persona,
-// para no depender de detalles internos del componente.
+// El primer bloque no usa red. El resto monta la vista contra una API simulada.
+// Los campos se buscan por su etiqueta, como los veria un usuario.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';

@@ -1,5 +1,4 @@
-// Pruebas unitarias de la logica de despacho.
-// Cubre el riesgo R1 (idempotencia) y el descuento de disponibilidad.
+// Pruebas de la logica de despacho: autorizar, rechazar y descontar inventario.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,8 +15,7 @@ function solicitud(cambios = {}) {
   };
 }
 
-// Cada llamada recarga los datos semilla, asi que cada prueba arranca desde
-// el mismo estado inicial sin necesidad de limpiar nada.
+// Cada servicio nuevo recarga los datos semilla, asi las pruebas no se pisan.
 function disponibles(service) {
   return service.availability('CENTER-001', 'PART-BRAKE-01').available;
 }
@@ -60,11 +58,8 @@ test('no registra la solicitud si la entrada es invalida', () => {
   assert.equal(service.get('REQ-001'), null);
 });
 
-// DEFECTO CONOCIDO F-01 (ver docs/FINDINGS.md).
-// El enunciado exige que una referencia ya procesada no provoque un segundo
-// despacho y que se preserve el resultado original. La aplicacion no lo cumple.
-// La prueba expresa la regla correcta y queda omitida para que la suite siga
-// en verde sin ocultar el hallazgo. Al corregir el defecto, se quita el skip.
+// Defecto F-01 (ver docs/FINDINGS.md): la app vuelve a despachar una referencia
+// repetida. La prueba dice lo que deberia pasar y se omite hasta que se corrija.
 test(
   'no reprocesa una referencia ya despachada',
   { skip: 'Defecto F-01: no hay guarda de idempotencia (ver docs/FINDINGS.md)' },

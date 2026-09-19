@@ -1,121 +1,115 @@
-# Prueba de carga - Consulta de disponibilidad
+# Prueba de carga
 
-## Objetivo
+## Qué se quería saber
 
-El negocio espera que `GET /api/availability` sostenga aproximadamente
-**30 solicitudes por segundo**, con picos breves cercanos a **60 por segundo**.
-Esta prueba evalua ese comportamiento en el entorno local.
+El negocio espera que la consulta de disponibilidad aguante **30 solicitudes por
+segundo**, con picos de **60 por segundo**. La prueba mide si eso se cumple.
 
-## Diseno del experimento
+## Cómo se diseñó
 
-**Ruta elegida:** `GET /api/availability?centerId=CENTER-LOAD&partCode=PART-LOAD-01`
+**Ruta elegida:** `GET /api/availability` con `CENTER-LOAD / PART-LOAD-01`.
 
-Es de solo lectura: no modifica inventario, asi que la prueba se puede repetir
-sin ensuciar el estado del entorno. El par `CENTER-LOAD / PART-LOAD-01` viene
-sembrado con 100000 unidades justamente para este uso.
+Tres razones:
 
-**Modelo de carga:** `constant-arrival-rate` (modelo abierto).
+- Es de solo lectura, así que la prueba se puede repetir sin ensuciar el entorno.
+- Es la ruta de la que habla el requisito.
+- Ese dato viene con 100.000 unidades sembradas justamente para esto.
 
-El requisito esta expresado en solicitudes por segundo, asi que se mide una tasa
-de llegadas fija, independiente de lo que tarde el servicio. Un modelo cerrado
-de usuarios concurrentes responderia otra pregunta -cuantas peticiones alcanza a
-hacer el sistema- y no permitiria afirmar si sostiene la tasa pedida.
+**Forma de generar la carga:** tasa de llegadas fija (`constant-arrival-rate`).
 
-| Escenario | Tasa | Duracion | Inicio |
+Se mandan 30 peticiones por segundo pase lo que pase, sin esperar a que las
+anteriores terminen. Es como funciona la realidad: los centros consultan cuando
+lo necesitan.
+
+La alternativa (un número fijo de usuarios que esperan su turno) mediría otra
+cosa: cuántas peticiones alcanza a hacer el sistema, no si aguanta el ritmo pedido.
+
+**Los dos escenarios:**
+
+| Escenario | Tasa | Dura | Empieza |
 |---|---|---|---|
-| Sostenida | 30 req/s | 60 s | 0 s |
-| Pico | 60 req/s | 20 s | 60 s |
+| Sostenida | 30 por segundo | 60 s | al inicio |
+| Pico | 60 por segundo | 20 s | en el segundo 60 |
 
-**Duracion total: 80 segundos.** Dentro del limite de 2 minutos del enunciado.
+Total: **80 segundos**. El límite del ejercicio son 2 minutos.
 
-**Clientes concurrentes:** 20 reservados por escenario, maximo 50. Los escenarios
-no se solapan. El maximo observado fue **40 clientes reservados**, sin necesidad
-de escalar, dentro del limite de 50.
+Clientes usados: **40**. El límite son 50.
 
-**Criterios de aceptacion declarados antes de ejecutar:**
+**Criterios definidos antes de ejecutar:**
 
-| Umbral | Valor | Razon |
-|---|---|---|
-| `http_req_failed` | < 1% | Tasa de errores tecnicos aceptable |
-| `http_req_duration p(95)` | < 200 ms | Tiempo de respuesta razonable para una consulta de lectura |
-
-## Resultados obtenidos
-
-Ejecucion sobre Docker Compose en equipo local (Apple Silicon), con k6 corriendo
-en la misma maquina que el servicio.
-
-| Metrica | Valor |
+| Criterio | Valor |
 |---|---|
-| Peticiones totales | 3001 |
-| Tasa alcanzada - sostenida | **30.00 req/s** (objetivo: 30) |
-| Tasa alcanzada - pico | **60.00 req/s** (objetivo: 60) |
-| Iteraciones descartadas | **0** |
-| Errores tecnicos | **0.00%** (0 de 3001) |
-| Verificaciones exitosas | 100% (6002 de 6002) |
-| Tiempo de respuesta - mediana | 1.92 ms |
-| Tiempo de respuesta - p(90) | 2.56 ms |
-| Tiempo de respuesta - p(95) | **2.70 ms** |
-| Tiempo de respuesta - maximo | 9.86 ms |
+| Errores | menos del 1% |
+| 95% de las respuestas | bajo 200 ms |
 
-Ambos umbrales se cumplieron:
+Se definen antes para no acomodar la meta al resultado.
+
+## Qué salió
+
+Ejecutado sobre Docker Compose en un equipo local, con k6 en la misma máquina.
+
+| Métrica | Resultado | Objetivo |
+|---|---|---|
+| Peticiones totales | 3001 | — |
+| Tasa sostenida lograda | **30.00 por segundo** | 30 ✅ |
+| Tasa en pico lograda | **60.00 por segundo** | 60 ✅ |
+| Peticiones descartadas | **0** | — |
+| Errores | **0%** (0 de 3001) | < 1% ✅ |
+| Verificaciones exitosas | 100% (6002 de 6002) | — |
+| Mitad de las respuestas | bajo 1.92 ms | — |
+| 95% de las respuestas | **bajo 2.7 ms** | < 200 ms ✅ |
+| La más lenta de todas | 9.86 ms | — |
+
+Los dos criterios se cumplieron:
 
 ```
 ✓ 'p(95)<200'   p(95)=2.7ms
 ✓ 'rate<0.01'   rate=0.00%
 ```
 
-## Interpretacion
+## Qué se puede concluir
 
-**Lo que si se puede afirmar:**
+**Lo que sí:**
 
-1. El servicio **sostuvo exactamente la tasa solicitada** en ambos escenarios.
-   Cero iteraciones descartadas significa que k6 nunca se quedo sin clientes
-   disponibles para mantener el ritmo: la tasa objetivo se cumplio, no se
-   aproximo.
-2. **No hubo errores tecnicos** ni respuestas invalidas en 3001 peticiones.
-3. El tiempo de respuesta se mantuvo **estable durante el pico**. El p(95) de
-   2.7 ms esta 74 veces por debajo del umbral declarado, y el maximo absoluto
-   (9.86 ms) no muestra picos de latencia que sugieran encolamiento.
+- El servicio mantuvo exactamente la tasa pedida en los dos escenarios.
+- Cero peticiones descartadas significa que nunca se quedó atrás: la tasa se
+  cumplió, no se aproximó.
+- No hubo ni un error en 3001 peticiones.
+- Los tiempos se mantuvieron estables durante el pico. Incluso la respuesta más
+  lenta tardó 10 ms, así que no hay casos malos escondidos.
 
-**Lo que NO se puede afirmar, y es importante decirlo:**
+**Lo que no, y es importante decirlo:**
 
-1. **No se encontro el punto de quiebre.** La prueba demuestra que el servicio
-   soporta 60 req/s con holgura, pero no dice donde empieza a degradarse. El
-   margen es tan amplio que la carga aplicada nunca fue el factor limitante.
-2. **El entorno no es representativo de produccion.** El servicio corre en un
-   unico proceso de Node, con los datos en memoria y sin base de datos. La
-   operacion medida es una busqueda en un `Map` y una serializacion a JSON: no
-   hay entrada/salida, que suele ser el verdadero cuello de botella.
-3. **k6 y el servicio compiten por el mismo procesador.** A estas tasas no es
-   significativo, pero invalidaria mediciones a tasas mucho mas altas.
-4. **No se midio el comportamiento con escritura concurrente.** Solo se ejercito
-   la ruta de lectura.
+- **No se encontró el punto de quiebre.** Sabemos que aguanta 60 por segundo.
+  No sabemos si se rompe en 200 o en 2000. El margen fue tan grande que la carga
+  nunca fue el límite.
+- **Este entorno no se parece a producción.** Los datos están en memoria, no en
+  una base de datos. Consultar disponibilidad es buscar en un diccionario: no hay
+  disco ni red hacia otra máquina, que es lo que suele volverse lento de verdad.
+- **k6 y el servicio comparten el mismo computador.** A estas tasas no afecta,
+  pero a tasas altas estaríamos midiendo el equipo, no el servicio.
+- **Solo se midió lectura.** No se probó qué pasa con muchas escrituras a la vez.
 
-**Conclusion:** el requisito de negocio se cumple con amplio margen en el entorno
-local, para la operacion de lectura evaluada. Ese resultado **no es extrapolable**
-a produccion, donde la persistencia real cambiaria por completo el perfil de
-tiempos.
+**En resumen:** el requisito se cumple con amplio margen en el entorno local,
+para la operación de lectura. No es extrapolable a producción.
 
-## Como se extenderia en un ambiente dedicado
+## Cómo se extendería
 
-Los limites del ejercicio (2 minutos, 50 clientes) mantienen la prueba
-comparable entre candidatos, pero impiden caracterizar el servicio. En un
-ambiente dedicado, con el servicio y el generador de carga en maquinas
-separadas, el siguiente paso seria:
+Los límites del ejercicio (2 minutos, 50 clientes) mantienen la prueba corta y
+comparable, pero no alcanzan para caracterizar el servicio. Con un ambiente
+dedicado haría:
 
-1. **Buscar el punto de quiebre** con un escenario `ramping-arrival-rate` que
-   suba la tasa progresivamente hasta que los tiempos se degraden o aparezcan
-   iteraciones descartadas. Eso da la capacidad real, no solo la conformidad.
-2. **Sostener la carga mas tiempo** (30 a 60 minutos) para detectar fugas de
-   memoria o degradacion progresiva, invisibles en 80 segundos.
-3. **Incluir la ruta de escritura** (`POST /api/dispatch-requests`) en una
-   proporcion realista respecto a las lecturas.
-4. **Observar el servicio desde adentro**: uso de CPU y memoria, no solo los
-   tiempos vistos por el cliente.
+1. **Buscar el punto de quiebre**, subiendo la tasa poco a poco hasta que los
+   tiempos se degraden o aparezcan peticiones descartadas.
+2. **Sostener la carga 30 o 60 minutos**, para ver si hay fugas de memoria o
+   degradación lenta. En 80 segundos eso no se nota.
+3. **Incluir las escrituras**, en una proporción parecida a la real.
+4. **Mirar el servicio por dentro**: uso de procesador y memoria, no solo los
+   tiempos que ve el cliente.
 
-## Como reproducir
+## Cómo repetirla
 
-Con el entorno levantado (`docker compose up --build -d`):
+Con el entorno levantado:
 
 ```bash
 k6 run load/availability.js

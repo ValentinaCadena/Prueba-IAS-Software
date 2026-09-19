@@ -1,108 +1,98 @@
 # Estrategia de pruebas
 
-Analisis previo a la automatizacion: que riesgos se priorizaron, con que criterio,
-que supuestos se asumieron y que nivel de prueba cubre cada riesgo.
+Que se decidio probar, con que criterio, y que quedo fuera.
 
-## Criterio de priorizacion
+## Como prioricé
 
-Se priorizo por **impacto de negocio**, no por cobertura. El escenario describe
-despachos de repuestos criticos para vehiculos inmovilizados, donde un despacho
-duplicado o un inventario descuadrado tienen costo operativo directo.
+Antes de escribir pruebas leí el código de la aplicación. Eso sirvió para dos cosas:
 
-El analisis partio de leer el codigo de la aplicacion antes de escribir pruebas.
-Eso permitio descartar dos riesgos que en un analisis superficial parecerian
-relevantes, y concentrar el esfuerzo donde si hay exposicion real.
+- Confirmar un defecto real (F-01).
+- Descartar dos riesgos que a primera vista parecían importantes pero no lo son.
 
-## Riesgos identificados
+Prioricé por **impacto en el negocio**, no por cobertura. Son despachos de
+repuestos para vehículos parados: un despacho duplicado cuesta dinero.
 
-| ID | Riesgo | Estado tras el analisis | Nivel que lo cubre |
+## Riesgos
+
+| ID | Riesgo | Resultado | Donde se prueba |
 |---|---|---|---|
-| R1 | Una `requestReference` repetida provoca un segundo despacho | **Defecto confirmado** (F-01) | Unitaria + integracion + interfaz |
-| R2 | Entradas invalidas aceptadas o mal reportadas | Validacion correcta; se fijan los bordes | Unitaria backend + frontend |
-| R3 | Operaciones de negocio accesibles sin credencial | Correcto salvo una ruta (O-01) | Integracion + humo |
-| R4 | Respuestas de error que exponen detalles internos | Correcto; se fija el contrato | Integracion |
-| R5 | Degradacion de la consulta de disponibilidad bajo carga | Medido: cumple con holgura (ver `LOAD_TEST.md`) | Carga |
-| R6 | ~~XSS almacenado via `notes`~~ | **Descartado** - ver abajo | Confirmado en prueba de componente |
-| R7 | ~~Sobreventa por solicitudes concurrentes~~ | **Descartado** - ver abajo | No automatizado (ver alcance no cubierto) |
+| R1 | Una referencia repetida se despacha dos veces | **Defecto confirmado** (F-01) | Unitaria backend |
+| R2 | Entradas inválidas mal validadas | Correcto. Se fijan los bordes | Unitaria backend y frontend |
+| R3 | Operaciones accesibles sin credencial | Correcto, salvo una ruta (O-01) | Integración |
+| R4 | Errores que exponen datos internos | Correcto. Se fija el contrato | Integración |
+| R5 | La consulta de disponibilidad no aguanta la carga | Aguanta con holgura | Carga (k6) |
+| R6 | ~~XSS en el campo de notas~~ | **Descartado** | Confirmado en componente |
+| R7 | ~~Dos solicitudes simultáneas venden lo mismo~~ | **Descartado** | No automatizado |
 
-### Por que se descarto R6
+### Por qué descarté R6 (XSS)
 
-La vista renderiza `notes` con interpolacion de texto (`{{ }}`), que escapa HTML
-por defecto. No se usa `v-html` en ningun punto de la aplicacion, por lo que un
-payload en `notes` se muestra como texto, no se ejecuta.
+La vista muestra las notas con `{{ }}`, que escapa el HTML automáticamente.
+No se usa `v-html` en ninguna parte.
 
-No se elimina del alcance: en el bloque de frontend se incluye una prueba que
-**confirma el escapado**, de modo que si alguien cambiara la vista a `v-html` la
-suite lo detecte.
+Aun así dejé una prueba que lo confirma. Si alguien cambiara la vista a `v-html`,
+esa prueba falla.
 
-### Por que se descarto R7
+### Por qué descarté R7 (sobreventa)
 
-El manejador de `POST /api/dispatch-requests` invoca al dominio de forma
-sincrona, sin operaciones asincronas entre la consulta de disponibilidad y el
-descuento. El modelo de ejecucion de Node procesa cada manejador hasta el final
-antes de atender el siguiente, por lo que no existe una ventana de
-"consultar y luego descontar" explotable entre peticiones concurrentes.
+El código que descuenta inventario no tiene pausas en el medio. Node atiende
+una petición completa antes de pasar a la siguiente, así que dos peticiones no
+pueden entrelazarse ahí.
 
-Al no haber exposicion real, se prioriza no invertir tiempo de automatizacion
-aqui. Queda registrado en el alcance no cubierto como verificacion opcional.
+No lo automaticé porque confirmaría algo que ya se ve leyendo el código.
 
 ## Supuestos
 
-1. **`GET /api/availability` sin autenticacion es intencional.** El contrato del
-   enunciado no indica que requiera sesion. Se documenta como observacion (O-01)
-   y se fija el comportamiento actual con una prueba, en lugar de reportarlo como
-   defecto.
-2. **El estado en memoria se reinicia entre ejecuciones.** Las pruebas que
-   dependen de disponibilidad concreta construyen su propia instancia del
-   servicio; las que corren contra el entorno desplegado usan referencias
-   generadas dinamicamente para no depender de ejecuciones anteriores.
-3. **La credencial local es de un solo uso y no se versiona.** Se genera con
-   `scripts/init-local-env.sh` en `.env`, ignorado por Git. Las pruebas de
-   integracion inyectan sus propias credenciales, por lo que ningun secreto real
-   aparece en el codigo de pruebas.
-4. **El camino de rechazo por falta de disponibilidad no es alcanzable end-to-end.**
-   La cantidad maxima por solicitud es 50 y la semilla mas baja tiene 2500
-   unidades, por lo que agotar el inventario via API exigiria decenas de
-   peticiones. Ese camino se cubre en pruebas unitarias usando una combinacion
-   centro/repuesto inexistente, que reporta disponibilidad cero.
+**1. `GET /api/availability` sin credencial es intencional.**
+El enunciado no dice que deba pedir sesión. Lo anoté como observación (O-01)
+para confirmarlo con negocio, no como defecto.
 
-## Que valida cada nivel
+**2. El estado se reinicia entre ejecuciones.**
+Los datos están en memoria. Las pruebas que dependen de un número exacto crean
+su propia instancia. Las que corren contra el entorno usan referencias nuevas
+en cada corrida.
 
-| Nivel | Proposito | Aislamiento |
+**3. La credencial es local y no se versiona.**
+Se genera con `scripts/init-local-env.sh`. Las pruebas de integración usan
+credenciales inventadas, así que no hay secretos en el código.
+
+**4. No se puede agotar el inventario desde la API.**
+El máximo por solicitud es 50 y el dato más bajo tiene 2500 unidades. El caso
+de "sin disponibilidad" se prueba con un centro que no existe.
+
+## Qué prueba cada nivel
+
+| Nivel | Qué responde | Necesita la app levantada |
 |---|---|---|
-| Unitaria backend | Reglas de validacion y logica de despacho, campo por campo y caso por caso | Sin HTTP ni red; cada prueba instancia su propio servicio |
-| Integracion backend | Que el contrato HTTP publicado coincida con el comportamiento del dominio | Aplicacion en proceso, sin puertos ni contenedores |
-| Unitaria frontend | Logica de validacion y comportamiento observable de la vista | Sin red; API simulada |
-| Integracion frontend | Componente, estado y cliente HTTP contra un contrato controlado | Sin navegador ni backend real |
-| Interfaz | Un flujo de usuario completo sobre la aplicacion desplegada | Entorno real; datos generados por ejecucion |
-| Humo | Decidir rapidamente si el entorno esta disponible para validar | Entorno real; sin aserciones de negocio profundas |
-| Carga | Comportamiento de la consulta de disponibilidad ante una tasa de llegadas dada | Entorno real; ruta que no muta estado |
+| Unitaria backend | ¿Las reglas están bien escritas? | No |
+| Integración backend | ¿La API hace lo que promete? | No |
+| Unitaria frontend | ¿La validación del formulario funciona? | No |
+| Componente frontend | ¿La vista muestra lo correcto? | No |
+| Interfaz | ¿El flujo del usuario funciona? | Sí |
+| Humo | ¿El entorno está disponible? | Sí |
+| Carga | ¿Aguanta el volumen esperado? | Sí |
 
-## Alcance no cubierto y por que
+## Qué dejé fuera y por qué
 
-La suite se mantuvo deliberadamente acotada. El enunciado indica que no se evalua
-por cantidad de pruebas sino por la calidad de las decisiones, asi que se
-priorizaron los casos que **expresan una regla del enunciado** por encima de los
-que exploran el espacio de valores posibles.
+La suite se mantuvo corta a propósito. El enunciado dice que no se evalúa por
+cantidad de pruebas. Prioricé los casos que expresan una regla del enunciado
+sobre los que exploran combinaciones de valores.
 
-Lo que quedo fuera, en orden de prioridad si hubiera mas tiempo:
-
-| Caso no cubierto | Por que se dejo fuera | Como se validaria |
+| Lo que falta | Por qué | Cómo lo haría |
 |---|---|---|
-| Bordes de tipo en `quantity` (`null`, `"10"`, ausente) | Se cubrieron los bordes del rango (0, 51, decimal), que son los que expresan la regla de negocio. Los de tipo son menos probables desde un cliente que serializa JSON | Ampliar `validation.test.js` con una tabla de valores invalidos |
-| Autenticacion ruta por ruta | Se verifico en una ruta. El middleware es compartido, pero una ruta podria quedar sin conectarlo, que es justamente lo observado en O-01 | Una prueba por ruta protegida que afirme 401 sin credencial |
-| Sobreventa con peticiones concurrentes (R7) | El analisis del codigo descarta la exposicion; automatizarlo confirmaria algo ya demostrado por inspeccion | Varias peticiones simultaneas verificando que el descuento sea la suma exacta |
-| JSON malformado y limite de tamano del cuerpo | Riesgo bajo: la respuesta ya es controlada y no expone trazas | Enviar un cuerpo truncado y uno mayor a 32kb, verificando 400 y 413 |
-| Rechazo por agotamiento real de inventario | No alcanzable end-to-end: maximo 50 por solicitud contra semillas de 2500+ (ver supuesto 4) | Sembrar un dato con disponibilidad baja, o cubrirlo solo a nivel unitario como se hizo |
+| Más tipos inválidos en `quantity` (`null`, `"10"`) | Ya cubrí los bordes del rango, que son los que expresan la regla | Una lista de valores inválidos en `validation.test.js` |
+| Autenticación en cada ruta protegida | La probé en una. El middleware es compartido | Una prueba por ruta, igual a la que ya existe |
+| Sobreventa con peticiones simultáneas | El código descarta el riesgo | Varias peticiones a la vez verificando el descuento total |
+| JSON malformado y cuerpo muy grande | Riesgo bajo, la respuesta ya es controlada | Enviar un cuerpo cortado y otro de más de 32kb |
+| Punto de quiebre bajo carga | El límite del ejercicio son 2 minutos | Subir la tasa hasta que se degrade (ver `LOAD_TEST.md`) |
 
-## Estado de la implementacion
+## Estado
 
 | Bloque | Estado |
 |---|---|
-| Unitarias backend | Implementado |
-| Integracion backend | Implementado |
-| Unitarias frontend | Implementado |
-| Integracion frontend | Implementado |
-| Automatizacion de interfaz | Implementado |
-| Humo | Implementado |
-| Carga | Implementado |
+| Unitarias backend | Listo |
+| Integración backend | Listo |
+| Unitarias frontend | Listo |
+| Integración frontend | Listo |
+| Interfaz | Listo |
+| Humo | Listo |
+| Carga | Listo |

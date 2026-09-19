@@ -1,5 +1,4 @@
-// Pruebas unitarias de la validacion de cantidad en el frontend.
-// Es una funcion pura: no monta componentes ni usa la red.
+// Pruebas de la validacion de cantidad del formulario.
 
 import { describe, it, expect } from 'vitest';
 import { validQuantity } from '../src/utils/validators.js';

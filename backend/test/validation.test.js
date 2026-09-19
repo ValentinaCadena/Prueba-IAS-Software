@@ -1,12 +1,10 @@
-// Pruebas unitarias de la validacion de entrada.
-// Cubre el riesgo R2: entradas invalidas deben producir un resultado controlado.
+// Pruebas de la validacion de entrada: que acepte lo valido y rechace lo invalido.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateDispatchInput } from '../src/domain/validation.js';
 
-// Solicitud valida de base. Cada prueba cambia solo el campo que esta probando,
-// para que un fallo apunte a una sola causa.
+// Solicitud valida de base. Cada prueba cambia solo el campo que esta probando.
 function solicitud(cambios = {}) {
   return {
     requestReference: 'REQ-001',

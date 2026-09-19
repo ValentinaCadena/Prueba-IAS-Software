@@ -1,69 +1,79 @@
-# Entorno base - Solicitudes de despacho
+# Solicitudes de despacho - Automatización de pruebas
 
-Repositorio base para la prueba tecnica de automatizacion sobre una aplicacion Node.js y Vue.js.
+Prueba técnica de automatización sobre una aplicación Node.js y Vue.js.
 
-## Requisito recomendado
+La aplicación es el sistema bajo prueba. Este repositorio agrega las pruebas, la
+documentación y la evidencia de las ejecuciones.
 
-- Docker con soporte para `docker compose`.
+## Qué hay acá
 
-No es necesario instalar Node.js localmente para levantar la aplicacion.
+| Documento | Contiene |
+|---|---|
+| `docs/TEST_STRATEGY.md` | Riesgos priorizados, supuestos y qué quedó fuera |
+| `docs/FINDINGS.md` | Defectos encontrados, con pasos para reproducirlos |
+| `docs/DECISIONS.md` | Herramientas elegidas y descartadas, y por qué |
+| `docs/LOAD_TEST.md` | Diseño, resultados e interpretación de la prueba de carga |
+| `docs/AI_USAGE.md` | Dónde se usó IA, cómo se validó y qué se corrigió |
+
+## Qué se automatizó
+
+| Suite | Dónde | Pruebas |
+|---|---|---|
+| Unitarias backend | `backend/test/` | 10 |
+| Integración backend | `backend/test/` | 5 |
+| Unitarias y componente frontend | `frontend/test/` | 9 |
+| Interfaz (navegador) | `e2e/tests/ui/` | 1 |
+| Humo | `e2e/tests/smoke/` | 3 |
+| Carga | `load/` | 2 escenarios |
+
+Total: **28 pruebas**, una de ellas omitida a propósito (ver más abajo).
 
 ## Levantar el entorno
 
+Se necesita Docker con `docker compose`.
+
 ```bash
-./scripts/init-local-env.sh
+./scripts/init-local-env.sh     # genera .env con la credencial local
 docker compose up --build -d
 ```
 
-URLs locales:
+Verificar:
 
-- Aplicacion web: `http://localhost:8080`
-- API: `http://localhost:3000`
-- Salud: `http://localhost:3000/health`
+```bash
+curl http://localhost:3000/health     # {"status":"UP"}
+open http://localhost:8080
+```
 
-La credencial se genera en `.env`, archivo ignorado por Git. Para consultarla nuevamente:
+| | URL |
+|---|---|
+| Aplicación web | `http://localhost:8080` |
+| API | `http://localhost:3000` |
+
+La credencial queda en `.env`, que Git ignora. Para verla de nuevo:
 
 ```bash
 ./scripts/show-local-credential.sh
 ```
 
-Las URLs base, las credenciales y los datos variables utilizados por las automatizaciones deben configurarse externamente.
-
-## Detener / reiniciar
+Para apagar todo y reiniciar los datos (están en memoria):
 
 ```bash
 docker compose down
-docker compose up -d
 ```
 
-Para reiniciar completamente el estado en memoria:
+También se puede correr sin Docker. Ver `docs/LOCAL_ENVIRONMENT.md`.
 
-```bash
-docker compose down
-docker compose up --build -d
-```
+---
 
-## Ejecucion sin Docker
+# Correr las pruebas
 
-Tambien es posible ejecutar backend y frontend con Node.js instalado. Consulta `docs/LOCAL_ENVIRONMENT.md`.
+Hay dos grupos, según si necesitan la aplicación levantada o no.
 
-## Pruebas
+## Grupo 1 · No necesitan nada levantado
 
-Las pruebas se agrupan en dos familias segun si necesitan o no la aplicacion desplegada.
-La distincion importa: determina que hay que levantar antes de ejecutarlas.
+Corren el código directamente, sin puertos ni contenedores. Son rápidas.
 
-### Familia A - No requieren entorno levantado
-
-Instancian el codigo directamente en el proceso de pruebas, sin puertos ni contenedores.
-Son rapidas y determinsticas, y se pueden ejecutar en cualquier momento.
-
-**Backend** (`node --test`, sin configuracion adicional):
-
-| Suite | Archivo | Que valida |
-|---|---|---|
-| Unitarias - validacion | `backend/test/validation.test.js` | Rango de cantidad, prioridad y campos obligatorios |
-| Unitarias - dominio | `backend/test/dispatchService.test.js` | Autorizacion, rechazo, descuento de disponibilidad e idempotencia |
-| Integracion - API | `backend/test/api.integration.test.js` | Ruta HTTP + autenticacion + validacion + dominio trabajando juntos |
+### Backend
 
 ```bash
 cd backend
@@ -71,12 +81,13 @@ npm install     # solo la primera vez
 npm test
 ```
 
-**Frontend** (`vitest` con `jsdom`, ya incluidos en el proyecto):
+| Archivo | Qué prueba |
+|---|---|
+| `validation.test.js` | Rango de cantidad, prioridad y campos obligatorios |
+| `dispatchService.test.js` | Autorizar, rechazar, descontar inventario e idempotencia |
+| `api.integration.test.js` | La API completa: ruta, login, validación y lógica juntos |
 
-| Suite | Archivo | Que valida |
-|---|---|---|
-| Unitarias - validacion | `frontend/test/validators.test.js` | Rango de cantidad aceptado por el formulario |
-| Componente e integracion | `frontend/test/App.test.js` | Vista sin sesion, y el flujo de registro contra una API simulada |
+### Frontend
 
 ```bash
 cd frontend
@@ -84,141 +95,141 @@ npm install     # solo la primera vez
 npm test
 ```
 
-Para ejecutar un solo archivo:
+| Archivo | Qué prueba |
+|---|---|
+| `validators.test.js` | La validación de cantidad del formulario |
+| `App.test.js` | La vista sin sesión y el flujo de registro contra una API simulada |
+
+### Un solo archivo
 
 ```bash
 cd backend  && node --test test/api.integration.test.js
 cd frontend && npx vitest run test/App.test.js
 ```
 
-### Familia B - Requieren un entorno desplegado
+## Grupo 2 · Necesitan la aplicación levantada
 
-Apuntan a una URL real y reciben la configuracion por variables de entorno.
+Apuntan a una URL y reciben la configuración por variables de entorno.
 
-Ambas viven en la carpeta `e2e/` y usan Playwright. Son suites separadas porque
-responden preguntas distintas:
+### Interfaz y humo (Playwright)
 
-| Suite | Archivo | Responde a | Duracion |
-|---|---|---|---|
-| Humo | `e2e/tests/smoke/smoke.spec.js` | "El entorno esta disponible para empezar a validar?" | < 1s |
-| Interfaz | `e2e/tests/ui/dispatch-flow.spec.js` | "El flujo del usuario funciona de punta a punta?" | < 1s |
+Son dos suites separadas porque responden preguntas distintas:
 
-La de humo comprueba tres cosas: que la API responda, que la web cargue, y que
-la operacion critica (registrar y consultar una solicitud) funcione. Lo hace por
-API, sin recorrer la interfaz, para terminar en segundos. Si falla, no tiene
-sentido ejecutar el resto de las suites.
+| Suite | Responde | Cómo |
+|---|---|---|
+| Humo | ¿El entorno está disponible para empezar a validar? | Por API, en menos de 1 segundo |
+| Interfaz | ¿El flujo del usuario funciona? | Con un navegador real |
 
-Requieren la aplicacion levantada. Primera vez:
+Si humo falla, no tiene sentido correr las demás suites.
+
+Primera vez:
 
 ```bash
 cd e2e
 npm install
-npx playwright install chromium   # descarga el navegador
+npx playwright install chromium     # descarga el navegador
 ```
 
-Ejecucion:
+Ejecución:
 
 ```bash
 cd e2e
-npm run humo        # solo la suite de humo
-npm run interfaz    # solo la automatizacion de interfaz
-npm test            # ambas
+npm run humo          # solo humo
+npm run interfaz      # solo interfaz
+npm test              # las dos
 ```
 
-Variables que usan, leidas del `.env` de la raiz:
+Ver el reporte de la última ejecución:
 
-| Variable | Para que | Si no se define |
+```bash
+cd e2e && npx playwright show-report
+```
+
+### Carga (k6)
+
+Mide si la consulta de disponibilidad aguanta 30 solicitudes por segundo, con
+picos de 60. Dura 80 segundos.
+
+```bash
+brew install k6                 # solo la primera vez
+k6 run load/availability.js     # con el entorno levantado
+```
+
+Los resultados y su interpretación están en `docs/LOAD_TEST.md`.
+
+> La carga apunta a una ruta de solo lectura, así que no altera el inventario.
+
+---
+
+# Configuración
+
+Todas las variables se leen del `.env` de la raíz. `.env.example` tiene la
+plantilla, sin valores reales.
+
+| Variable | Para qué | Si no se define |
 |---|---|---|
-| `BASE_URL` | URL de la aplicacion web | `http://localhost:8080` |
+| `TEST_USERNAME` | Usuario de la aplicación | Las pruebas fallan avisando qué falta |
+| `TEST_PASSWORD` | Credencial de la aplicación | Las pruebas fallan avisando qué falta |
+| `BASE_URL` | URL de la aplicación web | `http://localhost:8080` |
 | `API_URL` | URL de la API | `http://localhost:3000` |
-| `TEST_USERNAME` | Usuario del formulario de acceso | Las pruebas fallan con un mensaje explicito |
-| `TEST_PASSWORD` | Credencial del formulario de acceso | Las pruebas fallan con un mensaje explicito |
+| `BACKEND_PORT` | Puerto de la API en Docker | `3000` |
+| `FRONTEND_PORT` | Puerto de la web en Docker | `8080` |
 
-Para ejecutarlas contra el servidor de desarrollo de Vite en vez de Docker:
+## Cambiar de ambiente
+
+Las suites no dependen de cómo se levante la aplicación, solo de la URL que
+reciban. Cambiar de ambiente es cambiar una variable.
+
+| Ambiente | API | Web | Cómo se levanta |
+|---|---|---|---|
+| Docker Compose | `:3000` | `:8080` | `docker compose up --build -d` |
+| Node local | `:3000` | `:5173` | `npm start` y `npm run dev` |
+
+Por ejemplo, contra el servidor de desarrollo de Vite:
 
 ```bash
 cd e2e
 BASE_URL=http://localhost:5173 npm test
 ```
 
-Ver el reporte detallado de la ultima ejecucion:
+---
+
+# Cosas que conviene saber
+
+## Hay una prueba omitida a propósito
+
+Al correr las pruebas del backend verás esto:
+
+```
+﹣ no reprocesa una referencia ya despachada # Defecto F-01 (ver docs/FINDINGS.md)
+```
+
+Es un defecto encontrado en la aplicación. La prueba está escrita según lo que
+**debería** pasar, no según lo que pasa hoy, y queda omitida para que la suite
+siga en verde sin esconder el hallazgo.
+
+Cuando se corrija el defecto, se quita el `skip` y la prueba pasa.
+
+Los detalles están en `docs/FINDINGS.md`.
+
+## Las trazas de Playwright guardan la contraseña
+
+Se verificó: las trazas registran el texto que se escribe en los formularios,
+incluido el campo de contraseña.
+
+Por eso la configuración solo guarda evidencia cuando algo falla, no graba
+video, y `test-results/` y `playwright-report/` están en el `.gitignore`.
+
+Si se comparte evidencia, revisar antes las capturas y no adjuntar las trazas.
+
+## Los datos están en memoria
+
+Reiniciar el contenedor devuelve el inventario a los valores iniciales. Ver
+`docs/TEST_DATA.md`.
+
+Después de correr la carga o varias veces la interfaz, conviene reiniciar antes
+de tomar evidencia:
 
 ```bash
-cd e2e
-npx playwright show-report
+docker compose down && docker compose up -d
 ```
-
-**Prueba de carga** (k6, carpeta `load/`):
-
-Evalua si `GET /api/availability` sostiene las 30 solicitudes por segundo
-esperadas y los picos de 60. Dura 80 segundos.
-
-Requiere k6 instalado:
-
-```bash
-brew install k6
-```
-
-Ejecucion, con el entorno levantado:
-
-```bash
-k6 run load/availability.js
-```
-
-| Variable | Para que | Si no se define |
-|---|---|---|
-| `API_URL` | URL de la API | `http://localhost:3000` |
-| `LOAD_CENTER` | Centro a consultar | `CENTER-LOAD` |
-| `LOAD_PART` | Repuesto a consultar | `PART-LOAD-01` |
-
-El diseno del experimento, los resultados obtenidos y su interpretacion estan en
-`docs/LOAD_TEST.md`.
-
-> La carga se dirige a una ruta de solo lectura, asi que no altera el inventario
-> ni deja el entorno sucio para las demas suites.
-
-### Evidencia de las ejecuciones y datos sensibles
-
-Playwright registra en sus trazas **el texto escrito en los formularios, incluida
-la credencial**. Por eso la configuracion solo guarda evidencia cuando una prueba
-falla (`trace: 'retain-on-failure'`), no graba video, y las carpetas
-`test-results/` y `playwright-report/` estan ignoradas por Git.
-
-Si se comparte evidencia de una ejecucion, deben revisarse antes las capturas y
-no adjuntarse las trazas sin depurar.
-
-### Ambientes disponibles
-
-Las suites de la familia B no dependen de como se levante la aplicacion, solo de
-las URLs que reciban. Cambiar de ambiente significa cambiar variables, no codigo.
-
-| Ambiente | API | Aplicacion web | Como se levanta |
-|---|---|---|---|
-| Docker Compose | `http://localhost:3000` | `http://localhost:8080` | `docker compose up --build -d` |
-| Node local | `http://localhost:3000` | `http://localhost:5173` | `npm start` y `npm run dev` |
-
-Los puertos de Docker se pueden cambiar con `BACKEND_PORT` y `FRONTEND_PORT` en `.env`.
-
-### Sobre las pruebas omitidas
-
-La suite reporta pruebas omitidas (`﹣`) con el motivo al lado. Corresponden a
-defectos detectados y documentados en `docs/FINDINGS.md`: expresan el
-comportamiento esperado segun las reglas de negocio, no el actual. Se mantienen
-omitidas para que la suite siga siendo ejecutable en verde sin ocultar el hallazgo.
-Al corregir el defecto en la aplicacion, basta con quitar la opcion `skip`.
-
-```
-﹣ no reprocesa una referencia ya despachada # Defecto F-01: no hay guarda de idempotencia (ver docs/FINDINGS.md)
-```
-
-## Flujo web disponible
-
-La interfaz permite iniciar sesion, registrar una solicitud de despacho y observar el resultado, ademas de consultar solicitudes recientes. Este flujo puede utilizarse como base para la automatizacion de interfaz solicitada en la prueba.
-
-## Datos de prueba
-
-Consulta `docs/TEST_DATA.md`.
-
-## Importante
-
-La aplicacion es el sistema bajo prueba. No se espera que el candidato desarrolle nuevas funcionalidades de negocio. Los defectos que encuentre pueden documentarse con evidencia reproducible; no es obligatorio corregirlos.

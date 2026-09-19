@@ -1,12 +1,6 @@
-// Pruebas de integracion del backend.
-//
-// Integran ruta HTTP + autenticacion + validacion + dominio, todos reales.
-// No son unitarias porque cruzan varias capas a la vez.
-// No son humo porque la aplicacion se crea en memoria con createApp(), sin
-// puertos ni Docker: no dependen del entorno desplegado.
-//
-// Las credenciales se inyectan en la aplicacion, asi que ningun secreto real
-// aparece en el codigo de pruebas.
+// Pruebas de integracion: la API completa, con ruta, login, validacion y logica.
+// La app se crea en memoria con createApp(), sin puerto ni Docker.
+// Las credenciales se inventan aqui, no se lee el .env.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -102,8 +96,7 @@ test('una solicitud invalida devuelve 400 sin exponer detalles internos', async 
     .expect(400);
 
   assert.equal(respuesta.body.error, 'invalid_request');
-  // La respuesta solo trae el error y su detalle de negocio: ninguna traza,
-  // ruta de archivo ni nombre interno del servicio.
+  // Solo estos dos campos: nada de trazas ni nombres internos del servicio.
   assert.deepEqual(Object.keys(respuesta.body), ['error', 'details']);
 });
 
